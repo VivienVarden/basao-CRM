@@ -19,7 +19,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function DashboardPage() {
   const { store, locale, currency } = useApp()
-  const { data: session } = useSession()
+  const session = { user: { name: 'Trung (Admin)', role: 'admin', email: 'trung@crm.local' } }
   const { deals, customers, tasks } = store
 
   // Stats

@@ -7,21 +7,8 @@ import { BasaoAiChat } from './BasaoAiChat'
 import { CommandPalette } from './CommandPalette'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (status === 'unauthenticated') router.replace('/login')
-  }, [status, router])
-
-  if (status === 'loading') return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-base)', flexDirection: 'column', gap: 16 }}>
-      <div style={{ width: 48, height: 48, background: 'linear-gradient(135deg,#3b82f6,#6366f1)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, animation: 'pulse 2s infinite' }}>💹</div>
-      <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading Basao CRM...</div>
-    </div>
-  )
-
-  if (!session) return null
+  const session = { user: { name: 'Trung (Admin)', role: 'admin', email: 'trung@crm.local' } }
+  const status = 'authenticated'
 
   return (
     <div className="app-shell">

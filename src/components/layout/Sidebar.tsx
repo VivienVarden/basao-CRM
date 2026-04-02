@@ -18,11 +18,11 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { data: session } = useSession()
   const { locale, store } = useApp()
-
   const overdueTaskCount = store.tasks.filter(t => t.status !== 'done' && new Date(t.dueDate) < new Date()).length
-  const user = session?.user
+  
+  const session = { user: { name: 'Trung (Admin)', role: 'admin', email: 'trung@crm.local' } }
+  const user = session.user as { name: string; role: string; email: string; image?: string }
 
   return (
     <aside className="sidebar">
@@ -82,7 +82,7 @@ export function Sidebar() {
       </nav>
 
       <div className="sidebar-bottom">
-        <div className="sidebar-user" onClick={() => signOut({ callbackUrl: '/login' })}>
+        <div className="sidebar-user">
           {user?.image ? (
             <div className="avatar"><img src={user.image} alt={user.name || ''} /></div>
           ) : (
