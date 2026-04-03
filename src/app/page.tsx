@@ -7,6 +7,7 @@ import { formatCompactCurrency, formatCurrency } from '@/lib/currencies'
 import { formatDate, daysUntilDeadline } from '@/lib/utils'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
+import { useState } from 'react'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -17,7 +18,20 @@ const STATUS_COLORS: Record<string, string> = {
   closed_won: '#10b981', closed_lost: '#ef4444',
 }
 
+function ModeToggle({ viewMode, setViewMode }: { viewMode: 'admin' | 'user', setViewMode: (m: 'admin' | 'user') => void }) {
+  return (
+    <div className="fixed-mode-toggle">
+      <div className="toggle-switch" onClick={() => setViewMode(viewMode === 'admin' ? 'user' : 'admin')}>
+        <div className={`toggle-knob ${viewMode}`}></div>
+        <span className="toggle-label admin-label">Admin</span>
+        <span className="toggle-label user-label">Users</span>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
+  const [viewMode, setViewMode] = useState<'admin' | 'user'>('user')
   const { store, locale, currency } = useApp()
   const session = { user: { name: 'Trung (Admin)', role: 'admin', email: 'trung@crm.local' } }
   const { deals, customers, tasks } = store
@@ -90,10 +104,86 @@ export default function DashboardPage() {
     return null
   }
 
+  if (viewMode === 'user') {
+    return (
+      <div className="user-landing-container">
+        <ModeToggle viewMode={viewMode} setViewMode={setViewMode} />
+        
+        <header className="ul-header">
+           <div className="ul-logo">Basao</div>
+           <nav className="ul-nav">
+             <a href="#">Sản phẩm</a>
+             <a href="#">Giải pháp</a>
+             <a href="#">Bảng giá</a>
+             <a href="#">Tài nguyên</a>
+           </nav>
+           <button className="ul-btn-primary">Book Demo</button>
+        </header>
+
+        <main className="ul-main">
+           <div className="ul-hero animate-up">
+              <div className="ul-badge">✨ Nền tảng Deal Flow AI Mới 2026</div>
+              <h1 className="ul-title">Quản Lý Giao Dịch<br/>Cho Đội Ngũ Tinh Nhuệ</h1>
+              <p className="ul-subtitle">Tối ưu hoá quy trình chốt deal, nắm bắt từng cơ hội với trợ lý AI đột phá.<br/>Giải pháp dành riêng cho các công ty khởi nghiệp và doanh nghiệp B2B.</p>
+              <div className="ul-actions">
+                 <button className="ul-btn-primary ul-btn-lg">Bắt đầu miễn phí</button>
+                 <button className="ul-btn-secondary ul-btn-lg">Liên hệ Sales</button>
+              </div>
+           </div>
+           
+           <div className="ul-preview animate-up" style={{ animationDelay: '0.2s' }}>
+              <div className="ul-glass-panel">
+                <div style={{ display: 'flex', gap: 20, textAlign: 'left' }}>
+                  <div style={{ width: 220, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
+                    <div style={{ width: 100, height: 28, background: 'rgba(14, 165, 233, 0.2)', borderRadius: 8, marginBottom: 32 }}></div>
+                    <div style={{ width: '100%', height: 16, background: 'rgba(255,255,255,0.08)', borderRadius: 6, marginBottom: 20 }}></div>
+                    <div style={{ width: '85%', height: 16, background: 'rgba(255,255,255,0.05)', borderRadius: 6, marginBottom: 20 }}></div>
+                    <div style={{ width: '90%', height: 16, background: 'rgba(255,255,255,0.05)', borderRadius: 6, marginBottom: 40 }}></div>
+                    <div style={{ width: '60%', height: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 4, marginBottom: 16 }}></div>
+                    <div style={{ width: '100%', height: 16, background: 'rgba(255,255,255,0.05)', borderRadius: 6, marginBottom: 20 }}></div>
+                    <div style={{ width: '80%', height: 16, background: 'rgba(255,255,255,0.05)', borderRadius: 6, marginBottom: 20 }}></div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ width: '100%', height: 70, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, marginBottom: 20, display: 'flex', alignItems: 'center', padding: '0 24px' }}>
+                       <div style={{ width: 300, height: 20, background: 'rgba(255,255,255,0.05)', borderRadius: 8 }}></div>
+                       <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
+                         <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }}></div>
+                         <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(14, 165, 233, 0.2)' }}></div>
+                       </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
+                      <div style={{ height: 140, background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(255,255,255,0.02))', border: '1px solid rgba(14, 165, 233, 0.2)', borderRadius: 16, padding: 20 }}>
+                        <div style={{ width: 40, height: 40, background: 'rgba(14, 165, 233, 0.2)', borderRadius: 10, marginBottom: 20 }}></div>
+                        <div style={{ width: '80%', height: 28, background: 'rgba(255,255,255,0.1)', borderRadius: 8, marginBottom: 12 }}></div>
+                        <div style={{ width: '50%', height: 14, background: 'rgba(255,255,255,0.05)', borderRadius: 4 }}></div>
+                      </div>
+                      <div style={{ height: 140, background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(255,255,255,0.02))', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: 16, padding: 20 }}>
+                        <div style={{ width: 40, height: 40, background: 'rgba(16, 185, 129, 0.2)', borderRadius: 10, marginBottom: 20 }}></div>
+                        <div style={{ width: '80%', height: 28, background: 'rgba(255,255,255,0.1)', borderRadius: 8, marginBottom: 12 }}></div>
+                        <div style={{ width: '50%', height: 14, background: 'rgba(255,255,255,0.05)', borderRadius: 4 }}></div>
+                      </div>
+                      <div style={{ height: 140, background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(255,255,255,0.02))', border: '1px solid rgba(139, 92, 246, 0.2)', borderRadius: 16, padding: 20 }}>
+                        <div style={{ width: 40, height: 40, background: 'rgba(139, 92, 246, 0.2)', borderRadius: 10, marginBottom: 20 }}></div>
+                        <div style={{ width: '80%', height: 28, background: 'rgba(255,255,255,0.1)', borderRadius: 8, marginBottom: 12 }}></div>
+                        <div style={{ width: '50%', height: 14, background: 'rgba(255,255,255,0.05)', borderRadius: 4 }}></div>
+                      </div>
+                    </div>
+                    <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16 }}></div>
+                  </div>
+                </div>
+              </div>
+           </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
-    <AppLayout>
-      <Header title={t(locale, 'dashboard.title')} subtitle="Basao CRM — B2B Deal Management" />
-      <div className="page-body animate-fade">
+    <>
+      <ModeToggle viewMode={viewMode} setViewMode={setViewMode} />
+      <AppLayout>
+        <Header title={t(locale, 'dashboard.title')} subtitle="Basao CRM — B2B Deal Management" />
+        <div className="page-body animate-fade">
 
         {/* Stats grid */}
         <div className="stats-grid">
@@ -290,6 +380,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </AppLayout>
+      </AppLayout>
+    </>
   )
 }
