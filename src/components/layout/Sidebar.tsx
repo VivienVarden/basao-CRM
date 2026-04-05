@@ -16,9 +16,7 @@ export function Sidebar() {
   const { data: session } = useSession()
   const { store } = useApp()
 
-  const overdueTaskCount = store.tasks
-    ? store.tasks.filter((t: { status: string; dueDate: string }) => t.status !== 'done' && new Date(t.dueDate) < new Date()).length
-    : 0
+  const overdueTaskCount = 0 // tasks feature not yet implemented
 
   const user = session?.user as { name?: string | null; email?: string | null; role?: string; image?: string } | undefined
 

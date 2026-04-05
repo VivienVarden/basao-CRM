@@ -3,8 +3,6 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { Sidebar } from './Sidebar'
-import { BasaoAiChat } from './BasaoAiChat'
-import { CommandPalette } from './CommandPalette'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
@@ -16,7 +14,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [status, router])
 
-  // Hiển thị loading spinner trong khi kiểm tra session
   if (status === 'loading') {
     return (
       <div style={{
@@ -44,7 +41,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Không render gì nếu chưa authenticated (redirect đang xử lý)
   if (!session) return null
 
   return (
@@ -53,8 +49,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="main-content">
         {children}
       </main>
-      <BasaoAiChat />
-      <CommandPalette />
     </div>
   )
 }
