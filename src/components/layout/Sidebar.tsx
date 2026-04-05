@@ -3,98 +3,93 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { useApp } from '@/lib/context'
-import { t } from '@/lib/i18n'
-import { getInitials, generateAvatarColor } from '@/lib/utils'
 
 const navItems = [
-  { href: '/', icon: '📊', key: 'nav.dashboard' as const },
-  { href: '/pipeline', icon: '🔥', key: 'nav.pipeline' as const },
-  { href: '/deals', icon: '💼', key: 'nav.deals' as const },
-  { href: '/customers', icon: '👥', key: 'nav.customers' as const },
-  { href: '/partners', icon: '🤝', key: 'nav.partners' as const },
-  { href: '/tasks', icon: '✅', key: 'nav.tasks' as const },
-  { href: '/brain', icon: '🧠', key: 'nav.brain' as const },
+  { href: '/dashboard', icon: '🧠', label: 'Intelligence' },
+  { href: '/deals', icon: '⚡️', label: 'Deal Engine' },
+  { href: '/network', icon: '🕸', label: 'Network' },
+  { href: '/outreach', icon: '📤', label: 'Outreach' },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { locale, store } = useApp()
-  const overdueTaskCount = store.tasks.filter(t => t.status !== 'done' && new Date(t.dueDate) < new Date()).length
-  
-  const session = { user: { name: 'Trung (Admin)', role: 'admin', email: 'trung@crm.local' } }
-  const user = session.user as { name: string; role: string; email: string; image?: string }
+  const { data: session } = useSession()
+  const { store } = useApp()
+
+  const overdueTaskCount = store.tasks
+    ? store.tasks.filter((t: { status: string; dueDate: string }) => t.status !== 'done' && new Date(t.dueDate) < new Date()).length
+    : 0
+
+  const user = session?.user as { name?: string | null; email?: string | null; role?: string; image?: string } | undefined
 
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">✨</div>
+        <div className="sidebar-logo-icon">▲</div>
         <div>
-          <div className="sidebar-logo-text">Basao CRM</div>
-          <div className="sidebar-logo-sub">Deal Management</div>
+          <div className="sidebar-logo-text" style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>Basao Intel</div>
+          <div className="sidebar-logo-sub" style={{ color: 'var(--accent)', fontSize: 11, fontWeight: 600 }}>Deal Engine V2</div>
         </div>
       </div>
 
-      <div style={{ padding: '0 16px', marginBottom: 12 }}>
-        <button 
-          onClick={() => window.dispatchEvent(new Event('open-search'))}
-          style={{ width: '100%', background: 'var(--bg-hover)', border: '1px solid var(--border)', padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.2s', outline: 'none' }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>🔍</span>
-            <span style={{ fontSize: 13, fontWeight: 500 }}>{locale === 'vi' ? 'Tìm kiếm nhanh...' : 'Quick search...'}</span>
-          </div>
-          <div style={{ fontSize: 11, background: 'var(--bg-base)', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>⌘K</div>
-        </button>
-      </div>
-
-      <nav className="sidebar-nav">
-        <div className="sidebar-section">
-          <div className="sidebar-section-label">Menu</div>
-          {navItems.map(item => {
-            const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
-            return (
-              <Link key={item.href} href={item.href} className={`sidebar-link ${isActive ? 'active' : ''}`}>
-                <span className="sidebar-link-icon">{item.icon}</span>
-                <span>{item.key === 'nav.brain' ? 'Brain Graph' : item.key === 'nav.pipeline' ? 'Pipeline' : t(locale, item.key as any)}</span>
-                {item.key === 'nav.tasks' && overdueTaskCount > 0 && (
-                  <span className="sidebar-link-badge">{overdueTaskCount}</span>
-                )}
-              </Link>
-            )
-          })}
-        </div>
-
-        {session?.user?.role === 'admin' && (
-          <div className="sidebar-section">
-            <div className="sidebar-section-label">System</div>
-            <Link href="/audit" className={`sidebar-link ${pathname === '/audit' ? 'active' : ''}`}>
-              <span className="sidebar-link-icon">🚨</span>
-              <span>Global Audit</span>
+      <nav className="sidebar-nav" style={{ marginTop: 24 }}>
+        {navItems.map(item => {
+          const isActive = pathname.startsWith(item.href)
+          return (
+            <Link key={item.href} href={item.href} className={`sidebar-nav-item ${isActive ? 'active' : ''}`}>
+              <span className="sidebar-link-icon" style={{ fontSize: 18 }}>{item.icon}</span>
+              <span>{item.label}</span>
+              {item.href === '/deals' && overdueTaskCount > 0 && (
+                <span style={{
+                  marginLeft: 'auto',
+                  background: '#ef4444',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  borderRadius: 99,
+                  padding: '2px 7px',
+                }}>{overdueTaskCount}</span>
+              )}
             </Link>
-            <Link href="/settings" className={`sidebar-link ${pathname === '/settings' ? 'active' : ''}`}>
-              <span className="sidebar-link-icon">⚙️</span>
-              <span>{t(locale, 'nav.settings')}</span>
-            </Link>
-          </div>
-        )}
+          )
+        })}
       </nav>
 
-      <div className="sidebar-bottom">
-        <div className="sidebar-user">
-          {user?.image ? (
-            <div className="avatar"><img src={user.image} alt={user.name || ''} /></div>
-          ) : (
-            <div className="avatar" style={{ background: generateAvatarColor(user?.name || 'U') }}>
-              {getInitials(user?.name || 'User')}
-            </div>
-          )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="sidebar-user-name truncate">{user?.name || 'User'}</div>
-            <div className="sidebar-user-email truncate">{user?.email || ''}</div>
+      {/* User info & Sign Out */}
+      <div
+        style={{
+          padding: '24px 16px',
+          borderTop: '1px solid var(--border)',
+          cursor: 'pointer',
+        }}
+        onClick={() => signOut({ callbackUrl: '/login' })}
+        title="Nhấn để đăng xuất"
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 36,
+            height: 36,
+            background: 'var(--bg-card)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 700,
+            color: '#fff',
+            border: '1px solid var(--border)',
+          }}>
+            {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
           </div>
-          <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>↗</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user?.name ?? 'Unknown'}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+              {user?.email ?? ''}
+            </div>
+          </div>
+          {/* Sign out icon */}
+          <div title="Đăng xuất" style={{ color: 'var(--text-muted)', fontSize: 14, flexShrink: 0 }}>→</div>
         </div>
       </div>
     </aside>

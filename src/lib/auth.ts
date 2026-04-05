@@ -1,11 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import bcrypt from 'bcryptjs'
 
-// ── Hardcoded accounts (thêm user mới tại đây) ───────────────────
+// ── Accounts loaded from environment variables (KHÔNG hardcode credentials) ──
+// Mật khẩu được hash bằng bcrypt, salt rounds = 12
+// Để thêm user mới: hash mật khẩu bằng `node -e "console.log(require('bcryptjs').hashSync('PASSWORD', 12))"`
+// rồi thêm vào .env.local
 const ACCOUNTS = [
-  { id: '1', username: 'Trung', password: 'REDACTED_PASSWORD', name: 'Trung', email: 'trung@crm.local', role: 'admin' },
-  { id: '2', username: 'Sale01', password: 'REDACTED_PASSWORD', name: 'Nguyễn Văn Sales', email: 'sales@crm.local', role: 'sales' },
+  {
+    id: '1',
+    username: process.env.ADMIN_USERNAME ?? '',
+    passwordHash: process.env.ADMIN_PASSWORD_HASH ?? '',
+    name: 'Trung',
+    email: 'trung@crm.local',
+    role: 'admin' as const,
+  },
+  {
+    id: '2',
+    username: process.env.SALES_USERNAME ?? '',
+    passwordHash: process.env.SALES_PASSWORD_HASH ?? '',
+    name: 'Nguyễn Văn Sales',
+    email: 'sales@crm.local',
+    role: 'sales' as const,
+  },
 ]
 
 export const authOptions: NextAuthOptions = {
@@ -13,22 +31,28 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        username: { label: 'ID', type: 'text' },
-        password: { label: 'Password', type: 'password' },
+        username: { label: 'Tên đăng nhập', type: 'text' },
+        password: { label: 'Mật khẩu', type: 'password' },
       },
       async authorize(credentials) {
+        if (!credentials?.username || !credentials?.password) return null
+
         const account = ACCOUNTS.find(
-          a => a.username === credentials?.username && a.password === credentials?.password
+          (a) => a.username !== '' && a.username === credentials.username
         )
-        if (account) {
-          return {
-            id: account.id,
-            name: account.name,
-            email: account.email,
-            role: account.role as 'admin' | 'sales',
-          }
+
+        if (!account || !account.passwordHash) return null
+
+        // So sánh mật khẩu bằng bcrypt (chống timing attack)
+        const isValid = await bcrypt.compare(credentials.password, account.passwordHash)
+        if (!isValid) return null
+
+        return {
+          id: account.id,
+          name: account.name,
+          email: account.email,
+          role: account.role,
         }
-        return null
       },
     }),
   ],
@@ -37,7 +61,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 giờ
+    maxAge: 8 * 60 * 60, // 8 giờ (giảm từ 24h)
   },
   callbacks: {
     async session({ session, token }: { session: any; token: any }) {

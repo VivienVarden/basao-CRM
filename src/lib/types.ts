@@ -1,120 +1,110 @@
-// All TypeScript Types for CRM System
+// All TypeScript Types for Deal Intelligence System
 
-export type Locale = 'en' | 'vi' | 'zh' | 'ko' | 'ja'
-export type Currency = 'USD' | 'VND' | 'CNY' | 'KRW' | 'JPY'
+export type Locale = 'en' | 'vi'
+export type Currency = 'USD' | 'VND'
 
-// ─── Customer ────────────────────────────────────────────────────────────────
-export type LeadSource = 'cold_call' | 'referral' | 'website' | 'event' | 'social' | 'partner' | 'other'
-export type CustomerStatus = 'lead' | 'processing' | 'closed' | 'failed'
+// ─── Company ─────────────────────────────────────────────────────────────
+export type CompanyType = 'Startup' | 'VC' | 'PE' | 'Corp'
 
-export interface ActivityLog {
-  id: string
-  type: 'note' | 'call' | 'meeting' | 'email' | 'task'
-  content: string
-  createdAt: string
-  createdBy: string
-}
-
-export interface Customer {
+export interface Company {
   id: string
   name: string
-  phone: string
-  email: string
-  company: string
-  source: LeadSource
-  status: CustomerStatus
-  tags: string[]
-  notes: ActivityLog[]
-  dealIds: string[]
-  avatarUrl?: string
+  type: CompanyType
+  industry: string
+  stage: string // e.g., 'Series A', 'Seed', 'Public', 'N/A'
+  website?: string
+  logo?: string
   createdAt: string
   updatedAt: string
 }
 
-// ─── Deal ─────────────────────────────────────────────────────────────────────
-export type DealStatus = 'new' | 'processing' | 'negotiating' | 'closed_won' | 'closed_lost'
+// ─── Person ───────────────────────────────────────────────────────────────────
+export type PersonRole = 'Founder' | 'Investor' | 'Partner' | 'Operator'
 
-export interface TimelineEvent {
+export interface Person {
   id: string
-  type: 'status_change' | 'note' | 'file' | 'meeting' | 'call'
-  content: string
-  fromStatus?: DealStatus
-  toStatus?: DealStatus
+  name: string
+  role: PersonRole
+  company_id?: string
+  email: string
+  linkedin?: string
+  tier_score: number // 1, 2, 3
+  relationship_score: number // 0-100 indicating strength of connection
+  lastInteractionDate?: string
+  avatarUrl?: string
+  tags: string[]
   createdAt: string
-  createdBy: string
+  updatedAt: string
 }
+
+// ─── Relationship (Graph Edge) ─────────────────────────────────────────────────
+export type RelationshipType = 'knows' | 'introduced' | 'worked_with' | 'invested_in' | 'advises'
+
+export interface Relationship {
+  id: string
+  personIdA: string // The source person
+  personIdB: string // The target person
+  type: RelationshipType
+  strengthScore: number // 0-100
+  notes?: string
+  createdAt: string
+}
+
+// ─── Deal ─────────────────────────────────────────────────────────────────────
+export type DealType = 'Fundraising' | 'Partnership' | 'Sales'
+export type DealStage = 'Sourcing' | 'Intro' | 'Meeting' | 'IC' | 'Term Sheet' | 'Close'
+export type DealStatus = 'Active' | 'Won' | 'Lost' | 'On Hold'
 
 export interface Deal {
   id: string
   name: string
+  company_id: string
+  type: DealType
+  stage: DealStage
   value: number
-  currency: Currency
   status: DealStatus
-  deadline: string
-  description: string
-  customerIds: string[]
-  stakeholderIds: string[]
-  commissions: Commission[]
-  timeline: TimelineEvent[]
-  tags: string[]
-  assigneeId?: string
-  bankId: string // Bank ID required for every deal
-  createdAt: string
-  updatedAt: string
-}
-
-// ─── Partner / Stakeholder ───────────────────────────────────────────────────
-export type PartnerRole = 'sales' | 'partner' | 'broker' | 'internal' | 'external' | 'consultant' | 'legal'
-
-export interface Partner {
-  id: string
-  name: string
-  role: PartnerRole
-  phone: string
-  email: string
-  company: string
-  dealIds: string[]
-  avatarUrl?: string
-  createdAt: string
-  updatedAt: string
-}
-
-// ─── Commission ───────────────────────────────────────────────────────────────
-export type CommissionStatus = 'pending' | 'paid'
-
-export interface Commission {
-  id: string
-  dealId: string
-  partnerId: string
-  partnerName: string
-  percentage: number
-  amount: number
   currency: Currency
-  status: CommissionStatus
-  paidAt?: string
-  note?: string
-}
-
-// ─── Task ─────────────────────────────────────────────────────────────────────
-export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
-export type TaskStatus = 'todo' | 'in_progress' | 'done'
-
-export interface Task {
-  id: string
-  title: string
-  description: string
-  dueDate: string
-  priority: TaskPriority
-  status: TaskStatus
-  dealId?: string
-  customerId?: string
-  assigneeId?: string
+  ownerId: string // Internal user managing the deal
+  sourceId?: string // personId who introduced or provided the leverage
+  probability: number // 0-100%
+  expectedCloseDate?: string
+  tags: string[]
+  notes?: string
   createdAt: string
   updatedAt: string
+}
+
+// ─── Interaction ──────────────────────────────────────────────────────────────
+export type InteractionType = 'Email' | 'Meeting' | 'Intro' | 'Call'
+
+export interface Interaction {
+  id: string
+  type: InteractionType
+  personId: string
+  dealId?: string
+  timestamp: string // When it happened
+  content: string // Notes or actual email body summary
+  sentiment?: 'positive' | 'neutral' | 'negative'
+  nextStepReminder?: string // Follow-up reminder date or text
+  createdBy: string
+}
+
+// ─── Outreach / Action ────────────────────────────────────────────────────────
+export type OutreachStatus = 'not_contacted' | 'contacted' | 'replied' | 'meeting_booked'
+
+export interface OutreachItem {
+  id: string
+  personId: string
+  dealId?: string
+  status: OutreachStatus
+  lastContactedAt?: string
+  followUpDate?: string
+  notes?: string
+  createdAt: string
 }
 
 // ─── User / Auth ──────────────────────────────────────────────────────────────
-export type UserRole = 'admin' | 'sales' | 'viewer'
+export type UserRole = 'admin' | 'bd' | 'viewer'
 
 export interface AppUser {
   id: string
@@ -126,26 +116,17 @@ export interface AppUser {
   preferredCurrency: Currency
 }
 
-// ─── App Store ────────────────────────────────────────────────────────────────
-export interface AppStore {
-  customers: Customer[]
+// ─── Application Intelligence Store ───────────────────────────────────────────
+export interface IntelligenceStore {
+  companies: Company[]
+  people: Person[]
+  relationships: Relationship[]
   deals: Deal[]
-  partners: Partner[]
-  tasks: Task[]
+  interactions: Interaction[]
+  outreachOutcomes: OutreachItem[]
   users: AppUser[]
   settings: {
     defaultCurrency: Currency
     defaultLocale: Locale
   }
-}
-
-// ─── Dashboard Stats ──────────────────────────────────────────────────────────
-export interface DashboardStats {
-  totalDeals: number
-  totalPipelineValue: number
-  closedWonThisMonth: number
-  closedWonValue: number
-  newLeads: number
-  tasksOverdue: number
-  conversionRate: number
 }

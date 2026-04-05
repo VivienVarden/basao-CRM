@@ -2,158 +2,133 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react'
 import {
-  AppStore, Customer, Deal, Partner, Task, Commission,
-  Locale, Currency, ActivityLog, TimelineEvent
+  IntelligenceStore, Company, Person, Deal, Interaction, Relationship, OutreachItem,
+  Locale, Currency
 } from './types'
-import { loadStore, saveStore, generateId, now } from './store'
+import { loadIntelligenceStore, saveStore, generateId, now } from './store'
 
-interface AppContextValue {
-  store: AppStore
+interface IntelContextValue {
+  store: IntelligenceStore
   locale: Locale
   setLocale: (l: Locale) => void
   currency: Currency
   setCurrency: (c: Currency) => void
-  addCustomer: (c: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'notes' | 'dealIds'>) => Customer
-  updateCustomer: (id: string, data: Partial<Customer>) => void
-  deleteCustomer: (id: string) => void
-  addCustomerNote: (customerId: string, content: string, type?: string) => void
-  addDeal: (d: Omit<Deal, 'id' | 'createdAt' | 'updatedAt' | 'timeline' | 'commissions'>) => Deal
+  
+  // Basic API for mutating the intelligence store
+  addPerson: (p: Omit<Person, 'id' | 'createdAt' | 'updatedAt'>) => Person
+  updatePerson: (id: string, data: Partial<Person>) => void
+  
+  addCompany: (c: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>) => Company
+  updateCompany: (id: string, data: Partial<Company>) => void
+  
+  addDeal: (d: Omit<Deal, 'id' | 'createdAt' | 'updatedAt'>) => Deal
   updateDeal: (id: string, data: Partial<Deal>) => void
-  deleteDeal: (id: string) => void
-  addDealTimelineEvent: (dealId: string, content: string, type?: string) => void
-  addPartner: (p: Omit<Partner, 'id' | 'createdAt' | 'updatedAt' | 'dealIds'>) => Partner
-  updatePartner: (id: string, data: Partial<Partner>) => void
-  deletePartner: (id: string) => void
-  addCommission: (dealId: string, c: Omit<Commission, 'id' | 'dealId'>) => void
-  updateCommission: (dealId: string, commissionId: string, data: Partial<Commission>) => void
-  removeCommission: (dealId: string, commissionId: string) => void
-  addTask: (t: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Task
-  updateTask: (id: string, data: Partial<Task>) => void
-  deleteTask: (id: string) => void
+  
+  addInteraction: (i: Omit<Interaction, 'id'>) => Interaction
+  
+  addRelationship: (r: Omit<Relationship, 'id' | 'createdAt'>) => Relationship
+  
+  addOutreach: (o: Omit<OutreachItem, 'id' | 'createdAt'>) => OutreachItem
+  updateOutreach: (id: string, data: Partial<OutreachItem>) => void
 }
 
-const AppContext = createContext<AppContextValue | null>(null)
+const IntelContext = createContext<IntelContextValue | null>(null)
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [store, setStore] = useState<AppStore>(() => loadStore())
+  const [store, setStore] = useState<IntelligenceStore>(() => loadIntelligenceStore())
   const [locale, setLocaleState] = useState<Locale>(() =>
-    (typeof window !== 'undefined' && (localStorage.getItem('crm_locale') as Locale)) || 'vi'
+    (typeof window !== 'undefined' && (localStorage.getItem('intel_locale') as Locale)) || 'en'
   )
   const [currency, setCurrencyState] = useState<Currency>(() =>
-    (typeof window !== 'undefined' && (localStorage.getItem('crm_currency') as Currency)) || 'VND'
+    (typeof window !== 'undefined' && (localStorage.getItem('intel_currency') as Currency)) || 'USD'
   )
 
-  const setLocale = (l: Locale) => { setLocaleState(l); if (typeof window !== 'undefined') localStorage.setItem('crm_locale', l) }
-  const setCurrency = (c: Currency) => { setCurrencyState(c); if (typeof window !== 'undefined') localStorage.setItem('crm_currency', c) }
+  const setLocale = (l: Locale) => { setLocaleState(l); if (typeof window !== 'undefined') localStorage.setItem('intel_locale', l) }
+  const setCurrency = (c: Currency) => { setCurrencyState(c); if (typeof window !== 'undefined') localStorage.setItem('intel_currency', c) }
 
-  const mutate = useCallback((updater: (s: AppStore) => AppStore) => {
-    setStore((prev: AppStore) => {
+  const mutate = useCallback((updater: (s: IntelligenceStore) => IntelligenceStore) => {
+    setStore((prev: IntelligenceStore) => {
       const next = updater(prev)
       saveStore(next)
       return next
     })
   }, [])
 
-  // ── Customer ──────────────────────────────────────────────────────────────
-  const addCustomer = useCallback((data: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'notes' | 'dealIds'>) => {
-    const customer: Customer = { ...data, id: generateId(), notes: [], dealIds: [], createdAt: now(), updatedAt: now() }
-    mutate((s: AppStore) => ({ ...s, customers: [...s.customers, customer] }))
-    return customer
+  // ── People ──────────────────────────────────────────────────────────────
+  const addPerson = useCallback((data: Omit<Person, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const person: Person = { ...data, id: generateId(), createdAt: now(), updatedAt: now() }
+    mutate(s => ({ ...s, people: [...s.people, person] }))
+    return person
   }, [mutate])
 
-  const updateCustomer = useCallback((id: string, data: Partial<Customer>) => {
-    mutate((s: AppStore) => ({ ...s, customers: s.customers.map((c: Customer) => c.id === id ? { ...c, ...data, updatedAt: now() } : c) }))
+  const updatePerson = useCallback((id: string, data: Partial<Person>) => {
+    mutate(s => ({ ...s, people: s.people.map(p => p.id === id ? { ...p, ...data, updatedAt: now() } : p) }))
   }, [mutate])
 
-  const deleteCustomer = useCallback((id: string) => {
-    mutate((s: AppStore) => ({ ...s, customers: s.customers.filter((c: Customer) => c.id !== id) }))
+  // ── Company ──────────────────────────────────────────────────────────
+  const addCompany = useCallback((data: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const org: Company = { ...data, id: generateId(), createdAt: now(), updatedAt: now() }
+    mutate(s => ({ ...s, companies: [...s.companies, org] }))
+    return org
   }, [mutate])
 
-  const addCustomerNote = useCallback((customerId: string, content: string, type = 'note') => {
-    const note: ActivityLog = { id: generateId(), type: type as ActivityLog['type'], content, createdAt: now(), createdBy: 'Admin' }
-    mutate((s: AppStore) => ({ ...s, customers: s.customers.map((c: Customer) => c.id === customerId ? { ...c, notes: [...c.notes, note], updatedAt: now() } : c) }))
+  const updateCompany = useCallback((id: string, data: Partial<Company>) => {
+    mutate(s => ({ ...s, companies: s.companies.map(o => o.id === id ? { ...o, ...data, updatedAt: now() } : o) }))
   }, [mutate])
 
   // ── Deal ──────────────────────────────────────────────────────────────────
-  const addDeal = useCallback((data: Omit<Deal, 'id' | 'createdAt' | 'updatedAt' | 'timeline' | 'commissions'>) => {
-    const deal: Deal = { ...data, id: generateId(), timeline: [], commissions: [], createdAt: now(), updatedAt: now() }
-    mutate((s: AppStore) => ({ ...s, deals: [...s.deals, deal] }))
+  const addDeal = useCallback((data: Omit<Deal, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const deal: Deal = { ...data, id: generateId(), createdAt: now(), updatedAt: now() }
+    mutate(s => ({ ...s, deals: [...s.deals, deal] }))
     return deal
   }, [mutate])
 
   const updateDeal = useCallback((id: string, data: Partial<Deal>) => {
-    mutate((s: AppStore) => ({ ...s, deals: s.deals.map((d: Deal) => d.id === id ? { ...d, ...data, updatedAt: now() } : d) }))
+    mutate(s => ({ ...s, deals: s.deals.map(d => d.id === id ? { ...d, ...data, updatedAt: now() } : d) }))
   }, [mutate])
 
-  const deleteDeal = useCallback((id: string) => {
-    mutate((s: AppStore) => ({ ...s, deals: s.deals.filter((d: Deal) => d.id !== id) }))
+  // ── Interaction ───────────────────────────────────────────────────────────
+  const addInteraction = useCallback((data: Omit<Interaction, 'id'>) => {
+    const interaction: Interaction = { ...data, id: generateId() }
+    mutate(s => ({ ...s, interactions: [...s.interactions, interaction] }))
+    return interaction
   }, [mutate])
 
-  const addDealTimelineEvent = useCallback((dealId: string, content: string, type = 'note') => {
-    const event: TimelineEvent = { id: generateId(), type: type as TimelineEvent['type'], content, createdAt: now(), createdBy: 'Admin' }
-    mutate((s: AppStore) => ({ ...s, deals: s.deals.map((d: Deal) => d.id === dealId ? { ...d, timeline: [...d.timeline, event], updatedAt: now() } : d) }))
+  // ── Relationship ──────────────────────────────────────────────────────────
+  const addRelationship = useCallback((data: Omit<Relationship, 'id' | 'createdAt'>) => {
+    const rel: Relationship = { ...data, id: generateId(), createdAt: now() }
+    mutate(s => ({ ...s, relationships: [...s.relationships, rel] }))
+    return rel
   }, [mutate])
 
-  // ── Partner ───────────────────────────────────────────────────────────────
-  const addPartner = useCallback((data: Omit<Partner, 'id' | 'createdAt' | 'updatedAt' | 'dealIds'>) => {
-    const partner: Partner = { ...data, id: generateId(), dealIds: [], createdAt: now(), updatedAt: now() }
-    mutate((s: AppStore) => ({ ...s, partners: [...s.partners, partner] }))
-    return partner
+  // ── Outreach ──────────────────────────────────────────────────────────────
+  const addOutreach = useCallback((data: Omit<OutreachItem, 'id' | 'createdAt'>) => {
+    const item: OutreachItem = { ...data, id: generateId(), createdAt: now() }
+    mutate(s => ({ ...s, outreachOutcomes: [...s.outreachOutcomes, item] }))
+    return item
   }, [mutate])
 
-  const updatePartner = useCallback((id: string, data: Partial<Partner>) => {
-    mutate((s: AppStore) => ({ ...s, partners: s.partners.map((p: Partner) => p.id === id ? { ...p, ...data, updatedAt: now() } : p) }))
-  }, [mutate])
-
-  const deletePartner = useCallback((id: string) => {
-    mutate((s: AppStore) => ({ ...s, partners: s.partners.filter((p: Partner) => p.id !== id) }))
-  }, [mutate])
-
-  // ── Commission ────────────────────────────────────────────────────────────
-  const addCommission = useCallback((dealId: string, data: Omit<Commission, 'id' | 'dealId'>) => {
-    const commission: Commission = { ...data, id: generateId(), dealId }
-    mutate((s: AppStore) => ({ ...s, deals: s.deals.map((d: Deal) => d.id === dealId ? { ...d, commissions: [...d.commissions, commission] } : d) }))
-  }, [mutate])
-
-  const updateCommission = useCallback((dealId: string, commissionId: string, data: Partial<Commission>) => {
-    mutate((s: AppStore) => ({ ...s, deals: s.deals.map((d: Deal) => d.id === dealId ? { ...d, commissions: d.commissions.map((c: Commission) => c.id === commissionId ? { ...c, ...data } : c) } : d) }))
-  }, [mutate])
-
-  const removeCommission = useCallback((dealId: string, commissionId: string) => {
-    mutate((s: AppStore) => ({ ...s, deals: s.deals.map((d: Deal) => d.id === dealId ? { ...d, commissions: d.commissions.filter((c: Commission) => c.id !== commissionId) } : d) }))
-  }, [mutate])
-
-  // ── Task ──────────────────────────────────────────────────────────────────
-  const addTask = useCallback((data: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const task: Task = { ...data, id: generateId(), createdAt: now(), updatedAt: now() }
-    mutate((s: AppStore) => ({ ...s, tasks: [...s.tasks, task] }))
-    return task
-  }, [mutate])
-
-  const updateTask = useCallback((id: string, data: Partial<Task>) => {
-    mutate((s: AppStore) => ({ ...s, tasks: s.tasks.map((t: Task) => t.id === id ? { ...t, ...data, updatedAt: now() } : t) }))
-  }, [mutate])
-
-  const deleteTask = useCallback((id: string) => {
-    mutate((s: AppStore) => ({ ...s, tasks: s.tasks.filter((t: Task) => t.id !== id) }))
+  const updateOutreach = useCallback((id: string, data: Partial<OutreachItem>) => {
+    mutate(s => ({ ...s, outreachOutcomes: s.outreachOutcomes.map(o => o.id === id ? { ...o, ...data } : o) }))
   }, [mutate])
 
   return (
-    <AppContext.Provider value={{
+    <IntelContext.Provider value={{
       store, locale, setLocale, currency, setCurrency,
-      addCustomer, updateCustomer, deleteCustomer, addCustomerNote,
-      addDeal, updateDeal, deleteDeal, addDealTimelineEvent,
-      addPartner, updatePartner, deletePartner,
-      addCommission, updateCommission, removeCommission,
-      addTask, updateTask, deleteTask,
+      addPerson, updatePerson,
+      addCompany, updateCompany,
+      addDeal, updateDeal,
+      addInteraction,
+      addRelationship,
+      addOutreach, updateOutreach
     }}>
       {children}
-    </AppContext.Provider>
+    </IntelContext.Provider>
   )
 }
 
 export function useApp() {
-  const ctx = useContext(AppContext)
+  const ctx = useContext(IntelContext)
   if (!ctx) throw new Error('useApp must be used within AppProvider')
   return ctx
 }
